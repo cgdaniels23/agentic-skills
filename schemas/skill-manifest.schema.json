@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://grantdaniels.me/schemas/skill-manifest.schema.json",
+  "title": "Skill Manifest",
+  "description": "Portable, versioned definition of a Perplexity-backed skill for the skill runner system.",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "name",
+    "description",
+    "tags",
+    "input_schema",
+    "prompt_template",
+    "output_schema",
+    "model_settings",
+    "safety_rules"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*_v[0-9]+$",
+      "description": "Immutable skill identifier including version suffix, e.g. research_brief_v1."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version. Prompt or schema changes require a new version."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 40
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "input_schema": {
+      "$ref": "#/$defs/jsonSchemaObject",
+      "description": "JSON Schema (draft 2020-12) validating caller input before prompt rendering."
+    },
+    "prompt_template": {
+      "type": "object",
+      "required": ["system", "instructions", "output_contract"],
+      "additionalProperties": false,
+      "properties": {
+        "system": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Fixed system prompt. User input is injected as data, never as instructions."
+        },
+        "instructions": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Task instructions with {{placeholder}} tokens bound from validated input."
+        },
+        "output_contract": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicit JSON-only output contract appended to the user message."
+        }
+      }
+    },
+    "output_schema": {
+      "$ref": "#/$defs/jsonSchemaObject",
+      "description": "JSON Schema (draft 2020-12) validating model response after parsing."
+    },
+    "model_settings": {
+      "type": "object",
+      "required": ["provider", "model", "temperature", "max_tokens"],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["perplexity"]
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1
+        },
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "max_tokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16000
+        }
+      }
+    },
+    "safety_rules": {
+      "type": "object",
+      "required": ["allow_external_writes", "require_citations", "denylist"],
+      "additionalProperties": false,
+      "properties": {
+        "allow_external_writes": {
+          "type": "boolean",
+          "description": "When false, the runtime must not perform autonomous external side effects."
+        },
+        "require_citations": {
+          "type": "boolean",
+          "description": "When true, the skill must return verifiable source citations."
+        },
+        "denylist": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Behaviors or content types the skill must never produce."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "jsonSchemaObject": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "$schema": { "type": "string" },
+        "$id": { "type": "string" },
+        "type": {},
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "properties": { "type": "object" },
+        "required": { "type": "array", "items": { "type": "string" } },
+        "additionalProperties": {},
+        "items": {},
+        "enum": { "type": "array" },
+        "const": {},
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" },
+        "minLength": { "type": "integer" },
+        "maxLength": { "type": "integer" },
+        "minItems": { "type": "integer" },
+        "maxItems": { "type": "integer" },
+        "pattern": { "type": "string" },
+        "format": { "type": "string" },
+        "$ref": { "type": "string" },
+        "$defs": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  }
+}
